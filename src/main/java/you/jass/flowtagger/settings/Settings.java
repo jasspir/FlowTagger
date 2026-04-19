@@ -41,7 +41,7 @@ public class Settings {
         defaults.setProperty("chat_position", "Prefix");
         defaults.setProperty("tab_position", "Prefix");
 
-        categories.put("tutorial", "toggle");
+        categories.put("tutorial", "tutorial");
         defaults.setProperty("tutorial", "true");
 
         properties.putAll(defaults);
@@ -104,6 +104,7 @@ public class Settings {
                 writeCategory(writer, "UI", grouped.get("ui"));
                 writeCategory(writer, "Tracked", grouped.get("tracked"));
                 writeCategory(writer, "Toggle", grouped.get("toggle"));
+                writeCategory(writer, "Tutorial", grouped.get("tutorial"));
             }
         } catch (IOException e) {
             System.err.println("Couldn't save file: " + e.getMessage());

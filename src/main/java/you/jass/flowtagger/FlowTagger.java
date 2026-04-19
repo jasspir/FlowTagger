@@ -30,15 +30,6 @@ public class FlowTagger implements ModInitializer {
             dispatcher.register(ClientCommandManager.literal("flowtagger").executes(context -> open()));
         });
 
-        //version 1.21.8-
-//        key = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-//                "FlowTagger Menu",
-//                InputUtil.Type.KEYSYM,
-//                GLFW.GLFW_KEY_UNKNOWN,
-//                "Flow Tagger"
-//        ));
-
-        //version 1.21.9+
         KeyBinding.Category category = KeyBinding.Category.create(Identifier.of("flowtagger", "flowtagger"));
         key = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "FlowTagger Menu",

@@ -29,11 +29,7 @@ public class UIScreen extends Screen {
     protected void init() {
         super.init();
 
-        //menu bugs out
-        //players format doesnt update
-        //tags dont show
-
-        if (!Settings.getBoolean("tutorial")) Settings.set("tutorial", "false");
+        if (Settings.getBoolean("tutorial")) Settings.set("tutorial", "false");
         Settings.load();
 
         UIUtils.isFocused = false;
