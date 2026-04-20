@@ -1,4 +1,4 @@
-FlowTagger is an **open source** client-side Fabric mod for Minecraft **1.21.9 – 1.21.11** that allows you to customize nametags, tab, & chat of players to display various playerdata from Flowpvp.gg
+FlowTagger is an **open source** client-side Fabric mod for Minecraft **1.21.9 – 1.21.11** that allows you to customize nametags, tab, & chat of players to display various playerdata from **Flowpvp.gg**
 
 > The only network activity the mod does is send read-only GET requests to flowpvp.gg/api/ranked/uuid to fetch json data of user statistics like their rank
 
