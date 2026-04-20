@@ -45,9 +45,9 @@ public class FlowTagger implements ModInitializer {
                 lastKitUpdate = System.currentTimeMillis();
             }
 
-            if (!tutorialAlreadySeen && Settings.getBoolean("tutorial")) {
+            if (!tutorialAlreadySeen && client.world != null && Settings.getBoolean("tutorial")) {
                 message("Thanks for using FlowTagger!", "flowtagger");
-                message("use /flowtagger or set the menu keybind to configure", "flowtagger");
+                message("use /flowtagger or set a keybind to configure", "flowtagger");
                 tutorialAlreadySeen = true;
             }
         });
