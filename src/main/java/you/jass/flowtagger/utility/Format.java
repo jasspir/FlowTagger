@@ -87,7 +87,7 @@ public class Format {
         }
 
         result = result.replace("icon", getIcon(mode));
-        result = result.replace("mode", mode.charAt(0) + mode.substring(1).toLowerCase());
+        result = result.replace("mode", getModeName(mode));
         result = result.replace("?", getModeColor(mode));
         return formatTierColor(result.replace('&', '§'), profile, mode);
     }
@@ -217,6 +217,7 @@ public class Format {
     private static Text formatTierColor(String result, GameProfile profile, String mode) {
         MutableText text = Text.empty();
         int start = 0, pos;
+
         while ((pos = result.indexOf('!', start)) != -1) {
             if (pos > start) text.append(Text.literal(result.substring(start, pos)));
             start = pos + 1;
@@ -225,6 +226,7 @@ public class Format {
             if (!colored.isEmpty()) text.append(Text.literal(colored).setStyle(Style.EMPTY.withColor(getTierColor(profile, mode))));
             start = next == -1 ? result.length() : next;
         }
+
         if (start < result.length()) text.append(Text.literal(result.substring(start)));
         return text;
     }
@@ -307,6 +309,23 @@ public class Format {
             case "DIAMOND_SMP" -> "&a";
             case "GLOBAL" -> "&e";
             default -> "&r";
+        };
+    }
+
+    public static String getModeName(String ladder) {
+        if (ladder == null) return null;
+        return switch (ladder.toUpperCase()) {
+            case "SWORD" -> "Sword";
+            case "AXE" -> "Axe";
+            case "UHC" -> "UHC";
+            case "VANILLA" -> "Vanilla";
+            case "MACE" -> "Mace";
+            case "DIAMOND_POT" -> "Dia Pot";
+            case "NETHERITE_OP" -> "Neth OP";
+            case "SMP" -> "Neth SMP";
+            case "DIAMOND_SMP" -> "Dia SMP";
+            case "GLOBAL" -> "Global";
+            default -> "";
         };
     }
 }

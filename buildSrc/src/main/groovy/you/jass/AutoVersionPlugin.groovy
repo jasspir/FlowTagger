@@ -1,13 +1,13 @@
 package you.jass
 
+import groovy.json.JsonSlurper
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import groovy.json.JsonSlurper
+
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class AutoVersionPlugin implements Plugin<Project> {
-
     void apply(Project project) {
         project.extensions.create('autoversion', AutoVersionExtension)
 
@@ -17,13 +17,24 @@ class AutoVersionPlugin implements Plugin<Project> {
 
             task.doLast {
                 def ext = project.extensions.autoversion as AutoVersionExtension
-                def targetMc = resolveTargetMinecraftVersion(project, ext)
+                def targetMc = null
+                if (ext.minecraftVersion) {
+                    targetMc = ext.minecraftVersion.toString()
+                    if (targetMc.toLowerCase() == 'auto') {
+                        if (project.hasProperty('targetVersion')) {
+                            targetMc = project.property('targetVersion').toString()
+                        } else {
+                            targetMc = null
+                        }
+                    }
+                } else if (project.hasProperty('targetVersion')) {
+                    targetMc = project.property('targetVersion').toString()
+                }
 
-                boolean needYarnLookup = isAuto(ext.yarnMappings)
-                boolean needLoaderLookup = isAuto(ext.loaderVersion)
-                boolean needFabricApiLookup = isAuto(ext.fabricVersion)
+                boolean needFabricMeta = (ext.yarnMappings?.toString()?.toLowerCase() == 'auto') || (ext.loaderVersion?.toString()?.toLowerCase() == 'auto')
+                boolean needFabricApi = (ext.fabricVersion?.toString()?.toLowerCase() == 'auto')
 
-                if ((needYarnLookup || needLoaderLookup || needFabricApiLookup) && !targetMc) {
+                if ((needFabricMeta || needFabricApi) && !targetMc) {
                     throw new org.gradle.api.GradleException("please set a minecraft version")
                 }
 
@@ -31,25 +42,14 @@ class AutoVersionPlugin implements Plugin<Project> {
                 String resolvedLoader = null
                 String resolvedFabric = null
 
-                // Yarn lookup is independent
-                if (needYarnLookup) {
-                    project.logger.lifecycle("autoversion: resolving yarn ${targetMc}")
-                    resolvedMappings = fetchYarnFor(targetMc)
-                    if (!resolvedMappings) {
-                        project.logger.lifecycle("autoversion: no yarn data for ${targetMc}, keeping existing yarn_mappings")
-                    }
+                if (needFabricMeta) {
+                    project.logger.lifecycle("autoversion: resolving fabric meta ${targetMc}")
+                    def meta = fetchFabricMetaFor(targetMc)
+                    resolvedMappings = meta.mappings
+                    resolvedLoader = meta.loader
                 }
 
-                // Loader lookup is independent and fail-soft
-                if (needLoaderLookup) {
-                    project.logger.lifecycle("autoversion: resolving fabric loader ${targetMc}")
-                    resolvedLoader = fetchFabricLoaderFor(targetMc)
-                    if (!resolvedLoader) {
-                        project.logger.lifecycle("autoversion: no fabric loader data for ${targetMc}, keeping existing loader_version")
-                    }
-                }
-
-                if (needFabricApiLookup) {
+                if (needFabricApi) {
                     project.logger.lifecycle("autoversion: resolving fabric api ${targetMc}")
                     resolvedFabric = fetchFabricApiFor(targetMc)
                 }
@@ -78,7 +78,7 @@ class AutoVersionPlugin implements Plugin<Project> {
                 }
 
                 if (ext.minecraftVersion) {
-                    if (isAuto(ext.minecraftVersion)) {
+                    if (ext.minecraftVersion.toString().toLowerCase() == 'auto') {
                         if (targetMc) merged.setProperty('minecraft_version', targetMc)
                     } else {
                         merged.setProperty('minecraft_version', ext.minecraftVersion.toString())
@@ -86,32 +86,24 @@ class AutoVersionPlugin implements Plugin<Project> {
                 }
 
                 if (ext.yarnMappings) {
-                    if (isAuto(ext.yarnMappings)) {
-                        if (resolvedMappings) {
-                            merged.setProperty('yarn_mappings', resolvedMappings)
-                        }
-                        // If lookup failed, keep existing value.
+                    if (ext.yarnMappings.toString().toLowerCase() == 'auto') {
+                        if (resolvedMappings) merged.setProperty('yarn_mappings', resolvedMappings)
                     } else {
                         merged.setProperty('yarn_mappings', ext.yarnMappings.toString())
                     }
                 }
 
                 if (ext.loaderVersion) {
-                    if (isAuto(ext.loaderVersion)) {
-                        if (resolvedLoader) {
-                            merged.setProperty('loader_version', resolvedLoader)
-                        }
-                        // If lookup failed, keep existing value.
+                    if (ext.loaderVersion.toString().toLowerCase() == 'auto') {
+                        if (resolvedLoader) merged.setProperty('loader_version', resolvedLoader)
                     } else {
                         merged.setProperty('loader_version', ext.loaderVersion.toString())
                     }
                 }
 
                 if (ext.fabricVersion) {
-                    if (isAuto(ext.fabricVersion)) {
-                        if (resolvedFabric) {
-                            merged.setProperty('fabric_version', resolvedFabric)
-                        }
+                    if (ext.fabricVersion.toString().toLowerCase() == 'auto') {
+                        if (resolvedFabric) merged.setProperty('fabric_version', resolvedFabric)
                     } else {
                         merged.setProperty('fabric_version', ext.fabricVersion.toString())
                     }
@@ -119,7 +111,6 @@ class AutoVersionPlugin implements Plugin<Project> {
 
                 putIfNotNull(merged, 'mod_version', ext.modVersion)
                 putIfNotNull(merged, 'maven_group', ext.mavenGroup)
-
                 def archivesBase = ext.archivesBaseName ?: merged.getProperty('archives_base_name') ?: 'mod'
                 def mcForName = merged.getProperty('minecraft_version') ?: targetMc ?: 'unknown'
                 merged.setProperty('archives_base_name', "${archivesBase}")
@@ -143,9 +134,7 @@ class AutoVersionPlugin implements Plugin<Project> {
                 if (merged.getProperty('loader_version')) sb << "loader_version=${merged.getProperty('loader_version')}\n"
                 if (merged.getProperty('fabric_version')) sb << "fabric_version=${merged.getProperty('fabric_version')}\n"
 
-                while (sb.length() > 0 && sb.charAt(sb.length() - 1) == '\n') sb.setLength(sb.length() - 1)
                 propsFile.withWriter('UTF-8') { w -> w.write(sb.toString()) }
-
                 project.logger.lifecycle("autoversion: wrote properties ${propsFile.name}")
             }
         }
@@ -171,54 +160,13 @@ class AutoVersionPlugin implements Plugin<Project> {
         }
     }
 
-    static boolean isAuto(def value) {
-        value != null && value.toString().trim().equalsIgnoreCase('auto')
-    }
-
-    static String resolveTargetMinecraftVersion(Project project, AutoVersionExtension ext) {
-        def targetMc = null
-
-        if (ext.minecraftVersion) {
-            targetMc = ext.minecraftVersion.toString()
-            if (targetMc.toLowerCase() == 'auto') {
-                if (project.hasProperty('targetVersion')) {
-                    targetMc = project.property('targetVersion').toString()
-                } else {
-                    targetMc = null
-                }
-            }
-        } else if (project.hasProperty('targetVersion')) {
-            targetMc = project.property('targetVersion').toString()
-        }
-
-        return targetMc
-    }
-
-    static String fetchFabricLoaderFor(String mcVersion) {
-        try {
-            def enc = URLEncoder.encode(mcVersion, 'UTF-8')
-            def url = "https://meta.fabricmc.net/v1/versions/loader/${enc}"
-            def txt = new URL(url).getText(requestProperties: ['User-Agent': 'Gradle/AutoVersionPlugin'])
-            def arr = new JsonSlurper().parseText(txt)
-            if (!arr || arr.size() == 0) return null
-            return arr[0].loader?.version
-        } catch (Exception e) {
-            return null
-        }
-    }
-
-    static String fetchYarnFor(String mcVersion) {
-        try {
-            def enc = URLEncoder.encode(mcVersion, 'UTF-8')
-            def url = "https://meta.fabricmc.net/v1/versions/yarn/${enc}"
-            def txt = new URL(url).getText(requestProperties: ['User-Agent': 'Gradle/AutoVersionPlugin'])
-            def arr = new JsonSlurper().parseText(txt)
-            if (!arr || arr.size() == 0) return null
-            def rel = arr.find { it.stable } ?: arr[0]
-            return rel.version
-        } catch (Exception e) {
-            return null
-        }
+    static Map fetchFabricMetaFor(String mcVersion) {
+        def enc = URLEncoder.encode(mcVersion, 'UTF-8')
+        def url = "https://meta.fabricmc.net/v1/versions/loader/${enc}"
+        def txt = new URL(url).getText(requestProperties: ['User-Agent': 'Gradle/AutoVersionPlugin'])
+        def arr = new JsonSlurper().parseText(txt)
+        if (!arr || arr.size() == 0) throw new org.gradle.api.GradleException("no fabric loader data for ${mcVersion}")
+        return [ loader: arr[0].loader.version, mappings: arr[0].mappings.version ]
     }
 
     static String fetchFabricApiFor(String mcVersion) {
@@ -227,9 +175,7 @@ class AutoVersionPlugin implements Plugin<Project> {
         def url = "https://api.modrinth.com/v2/project/fabric-api/version?game_versions=${qGame}&loaders=${qLoaders}"
         def txt = new URL(url).getText(requestProperties: ['User-Agent': 'Gradle/AutoVersionPlugin'])
         def arr = new JsonSlurper().parseText(txt)
-        if (!arr || arr.size() == 0) {
-            throw new org.gradle.api.GradleException("no fabric-api versions for ${mcVersion}")
-        }
+        if (!arr || arr.size() == 0) throw new org.gradle.api.GradleException("no fabric-api versions for ${mcVersion}")
         def rel = arr.find { it.version_type == 'release' } ?: arr[0]
         return rel.version_number
     }

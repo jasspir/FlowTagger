@@ -46,7 +46,10 @@ public class UIScreen extends Screen {
         int verticalGap = 14;
         int descriptionStart = 45;
 
+
         List<String> gamemodes = List.of("⚔ Automatic", "⚔ Best Elo", "⚔ Best Rank", "⭐ Global", "🗡 Sword", "🪓 Axe", "🪣 UHC", "☀ Vanilla", "☄ Mace", "⚗ DPot", "☠ NOP", "🌧 DSMP", "☁ NSMP");
+        List<String> gamemodeNames = List.of("Automatic", "Best Elo", "Best Rank", "Global", "Sword", "Axe", "UHC", "Vanilla", "Mace", "DPot", "NOP", "DSMP", "NSMP");
+
         List<String> tagPositions = List.of("Above", "Above+", "Prefix", "Suffix");
         List<String> otherPositions = List.of("Prefix", "Suffix");
 
@@ -88,8 +91,8 @@ public class UIScreen extends Screen {
                 panelWidthCenter - column1Start + 28,
                 panelHeightCenter - rowStart + verticalGap * 2,
                 78, 12, 10, textRenderer, gamemodes, theme, false,
-                gamemodes.indexOf(Format.getIcon(Settings.get("tag_gamemode")) + " " + Settings.get("tag_gamemode")),
-                selected -> Settings.set("tag_gamemode", gamemodes.get(selected).replaceFirst("^\\S+\\s", ""))
+                gamemodeNames.indexOf(Settings.get("tag_gamemode")),
+                selected -> Settings.set("tag_gamemode", gamemodeNames.get(selected))
         ));
 
         widgets.add(new UIDropdown(
@@ -119,8 +122,8 @@ public class UIScreen extends Screen {
                 panelWidthCenter - column1Start + 28,
                 panelHeightCenter - rowStart + verticalGap * 3,
                 78, 12, 10, textRenderer, gamemodes, theme, false,
-                gamemodes.indexOf(Format.getIcon(Settings.get("tab_gamemode")) + " " + Settings.get("tab_gamemode")),
-                selected -> Settings.set("tab_gamemode", gamemodes.get(selected).replaceFirst("^\\S+\\s", ""))
+                gamemodeNames.indexOf(Settings.get("tab_gamemode")),
+                selected -> Settings.set("tab_gamemode", gamemodeNames.get(selected))
         ));
 
         widgets.add(new UIDropdown(
@@ -151,8 +154,8 @@ public class UIScreen extends Screen {
                 panelWidthCenter - column1Start + 28,
                 panelHeightCenter - rowStart + verticalGap * 4,
                 78, 12, 10, textRenderer, gamemodes, theme, false,
-                gamemodes.indexOf(Format.getIcon(Settings.get("chat_gamemode")) + " " + Settings.get("chat_gamemode")),
-                selected -> Settings.set("chat_gamemode", gamemodes.get(selected).replaceFirst("^\\S+\\s", ""))
+                gamemodeNames.indexOf(Settings.get("chat_gamemode")),
+                selected -> Settings.set("chat_gamemode", gamemodeNames.get(selected))
         ));
 
         widgets.add(new UIDropdown(
@@ -328,7 +331,7 @@ public class UIScreen extends Screen {
         widgets.add(new UILabel(
                 panelWidthCenter - column1Start + descriptionStart,
                 panelHeightCenter - rowStart + verticalGap * 15,
-                textRenderer, "the color of the players tier, use &f to stop it",
+                textRenderer, "the color of the player's tier, use &f to stop it",
                 description, false, false
         ));
 
