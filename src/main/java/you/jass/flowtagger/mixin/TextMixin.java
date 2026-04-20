@@ -2,6 +2,7 @@ package you.jass.flowtagger.mixin;
 
 import net.minecraft.client.render.entity.DisplayEntityRenderer;
 import net.minecraft.client.render.entity.state.TextDisplayEntityRenderState;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.DisplayEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.*;
@@ -25,7 +26,9 @@ public abstract class TextMixin {
     private void cache(DisplayEntity.TextDisplayEntity entity, TextDisplayEntityRenderState state, float f, CallbackInfo ci) {
         if (!Toggle.TAG.toggled()) return;
         if (state.textLines == null) return;
-        if (!(entity.getVehicle() instanceof PlayerEntity player)) return;
+
+        PlayerEntity player = findRiddenPlayer(entity);
+        if (player == null) return;
 
         boolean prefix = Settings.get("tag_position").equals("Prefix");
         boolean suffix = !prefix && Settings.get("tag_position").equals("Suffix");
@@ -67,6 +70,18 @@ public abstract class TextMixin {
         }
 
         if (edit) state.textLines = new DisplayEntity.TextDisplayEntity.TextLines(lines, width);
+    }
+
+    @Unique
+    private static PlayerEntity findRiddenPlayer(Entity entity) {
+        Entity current = entity.getVehicle();
+
+        while (current != null) {
+            if (current instanceof PlayerEntity player) return player;
+            current = current.getVehicle();
+        }
+
+        return null;
     }
 
     @Unique
