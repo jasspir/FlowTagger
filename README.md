@@ -2,7 +2,7 @@ FlowTagger is an **open source** client-side Fabric mod for Minecraft **1.21.9 â
 
 > The only network activity the mod does is send read-only GET requests to flowpvp.gg/api/ranked/\<uuid\> to fetch json data of user statistics like their rank
 
-# UI Config
+# UI
 <img width="913" height="747" alt="image" src="https://github.com/user-attachments/assets/950f496a-27b8-45b2-b01b-a2a14cbc5dfe" />
 
 # Tag
